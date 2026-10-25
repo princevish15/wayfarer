@@ -207,14 +207,23 @@ async def cached_image(client: httpx.AsyncClient, query: str) -> Optional[str]:
 async def attach_images(destination: str, itinerary: dict, only_day: Optional[int] = None) -> None:
     """Attach photos to the trip cover and a limited number of sightseeing/experience activities."""
     limit = MAX_DAY_PHOTOS if only_day is not None else MAX_TRIP_PHOTOS
-    targets = []
+    per_day = []
     for day in itinerary.get("days", []):
         if only_day is not None and day.get("day") != only_day:
             continue
+        cands = []
         for act in day.get("activities", []):
             act.pop("image_url", None)
-            if act.get("type") in ("attraction", "experience") and len(targets) < limit:
-                targets.append(act)
+            if act.get("type") in ("attraction", "experience"):
+                cands.append(act)
+        per_day.append(cands)
+    # round-robin across days so every day gets a photo before any day gets a second one
+    limit = max(limit, len(per_day))
+    targets = []
+    for rnd in range(max((len(c) for c in per_day), default=0)):
+        for cands in per_day:
+            if rnd < len(cands) and len(targets) < limit:
+                targets.append(cands[rnd])
     async with httpx.AsyncClient(timeout=10) as client:
         jobs = [cached_image(client, a.get("image_query") or f"{a.get('title', '')} {destination}") for a in targets]
         if only_day is None:
