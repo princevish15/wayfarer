@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
-import { useWikiImage } from "../lib/destinations";
+import { Map, Utensils, Wallet } from "lucide-react";
 import PasswordInput from "../components/PasswordInput";
+import WorldMap from "../components/WorldMap";
 
 export default function Login() {
   const [mode, setMode] = useState("signin");
@@ -10,7 +11,6 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  const bg = useWikiImage("Santorini", 1280);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -31,16 +31,30 @@ export default function Login() {
   };
 
   return (
-    <div className="login-wrap" style={bg ? { "--login-bg": `url(${bg})` } : undefined}>
+    <div className="login-wrap">
+      <WorldMap className="login-map" />
       <div className="login-hero">
         <div className="brand big">
           <span className="brand-mark">W</span> Wayfarer
         </div>
-        <h1>Plan the trip, not the research.</h1>
+        <h1>
+          Plan the trip, <span className="grad">not the research.</span>
+        </h1>
         <p>
           Tell us where, when and how you like to travel. Get a day-by-day plan with attractions, food, stays and
           transport in seconds, then tweak and regenerate any day.
         </p>
+        <ul className="login-points">
+          <li>
+            <Map size={16} /> Day-by-day plans with map routes
+          </li>
+          <li>
+            <Utensils size={16} /> Local food, markets and adventures
+          </li>
+          <li>
+            <Wallet size={16} /> Live budget tracker
+          </li>
+        </ul>
       </div>
       <form className="card login-card" onSubmit={submit}>
         <h2>{mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : "Reset your password"}</h2>

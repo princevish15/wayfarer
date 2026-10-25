@@ -5,7 +5,7 @@ import { EXPERIENCES, PAGES } from "../lib/experiences";
 import { useWikiImage } from "../lib/destinations";
 import { fmtMoney } from "../lib/format";
 
-function ExpCard({ e }) {
+export function ExpCard({ e }) {
   const img = useWikiImage(e.wiki, 960);
   return (
     <Link className="dest" to={`/new?dest=${encodeURIComponent(e.place)}`} style={img ? { backgroundImage: `url(${img})` } : undefined}>

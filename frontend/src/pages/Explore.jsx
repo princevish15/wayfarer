@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MapPin, Search } from "lucide-react";
+import { ArrowRight, MapPin, Mountain, Plane, Search, ShoppingBag, Utensils } from "lucide-react";
 import { DESTINATIONS, useWikiImage } from "../lib/destinations";
+import { EXPERIENCES } from "../lib/experiences";
+import { ExpCard } from "./Experiences";
+import WorldMap from "../components/WorldMap";
+
+const STRIPS = [
+  { kind: "food", to: "/food", icon: Utensils, eyebrow: "Eat like a local", title: "Taste the place" },
+  { kind: "adventure", to: "/adventures", icon: Mountain, eyebrow: "Get your heart going", title: "Adventures, priced up front" },
+  { kind: "shopping", to: "/shopping", icon: ShoppingBag, eyebrow: "Bring a bit home", title: "Shop the markets" },
+];
 
 function DestCard({ d }) {
   const img = useWikiImage(d.wiki, 960);
@@ -133,6 +142,20 @@ export default function Explore() {
         ))}
       </section>
 
+      <section className="stats-band">
+        {[
+          [DESTINATIONS.length, "handpicked places"],
+          [Object.values(EXPERIENCES).flat().length, "food, shops & adventures"],
+          ["1 min", "to a full day-by-day plan"],
+          ["₹0", "to plan your trip"],
+        ].map(([n, t]) => (
+          <div key={t}>
+            <strong>{n}</strong>
+            <span>{t}</span>
+          </div>
+        ))}
+      </section>
+
       <div className="page-head">
         <div>
           <h2>Popular destinations</h2>
@@ -151,6 +174,34 @@ export default function Explore() {
         <Section key={r} region={r} />
       ))}
 
+      {STRIPS.map((s) => (
+        <motion.section
+          className="strip"
+          key={s.kind}
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="strip-head">
+            <div>
+              <span className="eyebrow">
+                <s.icon size={14} /> {s.eyebrow}
+              </span>
+              <h2>{s.title}</h2>
+            </div>
+            <Link to={s.to} className="btn btn-ghost btn-sm">
+              See all <ArrowRight size={14} />
+            </Link>
+          </div>
+          <div className="strip-row">
+            {EXPERIENCES[s.kind].slice(0, 6).map((e) => (
+              <ExpCard key={e.name} e={e} />
+            ))}
+          </div>
+        </motion.section>
+      ))}
+
       <section className="quotes">
         {QUOTES.map((x) => (
           <figure key={x.a}>
@@ -158,6 +209,17 @@ export default function Explore() {
             <figcaption>{x.a}</figcaption>
           </figure>
         ))}
+      </section>
+
+      <section className="cta-band">
+        <WorldMap className="cta-map" />
+        <div className="cta-in">
+          <h2>Your next story starts with a plan</h2>
+          <p>Pick a place, set a budget, and let Wayfarer do the research.</p>
+          <Link to="/new" className="btn btn-primary btn-lg">
+            <Plane size={18} /> Plan my trip
+          </Link>
+        </div>
       </section>
     </>
   );

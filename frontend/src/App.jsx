@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Compass, Luggage, Mountain, Plus, ShoppingBag, Utensils } from "lucide-react";
-import { Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Compass, LogOut, Luggage, Menu, Mountain, Plus, ShoppingBag, Utensils, X } from "lucide-react";
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { supabase, supabaseConfigured } from "./lib/supabase";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -11,43 +11,82 @@ import NewTrip from "./pages/NewTrip";
 import TripView from "./pages/TripView";
 import SharedTrip from "./pages/SharedTrip";
 
+const MENU = [
+  { to: "/", icon: Compass, label: "Explore" },
+  { to: "/food", icon: Utensils, label: "Food" },
+  { to: "/shopping", icon: ShoppingBag, label: "Shopping" },
+  { to: "/adventures", icon: Mountain, label: "Adventures" },
+  { to: "/trips", icon: Luggage, label: "My trips" },
+];
+
 function Shell({ session, children }) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate("/login");
   };
+  const email = session.user.email;
   return (
     <div className="shell">
       <header className="topbar">
-        <Link to="/" className="brand">
-          <span className="brand-mark">W</span> Wayfarer
-        </Link>
+        <div className="topbar-left">
+          <button className="icon-btn" aria-label="Open menu" title="Menu" onClick={() => setOpen(true)}>
+            <Menu size={20} />
+          </button>
+          <Link to="/" className="brand">
+            <span className="brand-mark">W</span> Wayfarer
+          </Link>
+        </div>
         <nav>
-          <Link to="/" className="navlink">
-            <Compass size={16} /> Explore
+          <NavLink to="/" end className="icon-btn" aria-label="Explore" title="Explore">
+            <Compass size={19} />
+          </NavLink>
+          <NavLink to="/trips" className="icon-btn" aria-label="My trips" title="My trips">
+            <Luggage size={19} />
+          </NavLink>
+          <Link to="/new" className="icon-btn icon-btn-primary" aria-label="New trip" title="New trip">
+            <Plus size={19} />
           </Link>
-          <Link to="/food" className="navlink">
-            <Utensils size={16} /> Food
-          </Link>
-          <Link to="/shopping" className="navlink">
-            <ShoppingBag size={16} /> Shopping
-          </Link>
-          <Link to="/adventures" className="navlink">
-            <Mountain size={16} /> Adventures
-          </Link>
-          <Link to="/trips" className="navlink">
-            <Luggage size={16} /> My trips
-          </Link>
-          <Link to="/new" className="btn btn-primary btn-sm">
-            <Plus size={14} /> New trip
-          </Link>
-          <span className="muted email">{session.user.email}</span>
-          <button className="btn btn-ghost btn-sm" onClick={signOut}>
-            Sign out
+          <span className="avatar" title={email}>
+            {email[0].toUpperCase()}
+          </span>
+          <button className="icon-btn" aria-label="Sign out" title="Sign out" onClick={signOut}>
+            <LogOut size={18} />
           </button>
         </nav>
       </header>
+
+      <div className={`drawer-backdrop ${open ? "on" : ""}`} onClick={() => setOpen(false)} />
+      <aside className={`drawer ${open ? "on" : ""}`} aria-hidden={!open}>
+        <div className="drawer-head">
+          <span className="brand">
+            <span className="brand-mark">W</span> Wayfarer
+          </span>
+          <button className="icon-btn" aria-label="Close menu" onClick={() => setOpen(false)} tabIndex={open ? 0 : -1}>
+            <X size={20} />
+          </button>
+        </div>
+        <nav className="drawer-nav">
+          {MENU.map(({ to, icon: Icon, label }) => (
+            <NavLink key={to} to={to} end={to === "/"} tabIndex={open ? 0 : -1}>
+              <Icon size={18} /> {label}
+            </NavLink>
+          ))}
+        </nav>
+        <Link to="/new" className="btn btn-primary drawer-cta" tabIndex={open ? 0 : -1}>
+          <Plus size={16} /> Plan a new trip
+        </Link>
+        <p className="muted small drawer-email">{email}</p>
+      </aside>
+
       <main className="container">{children}</main>
     </div>
   );
