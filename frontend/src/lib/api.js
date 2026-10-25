@@ -29,7 +29,9 @@ async function post(path, body) {
 
 export const generateItinerary = (preferences) => post("/api/itinerary/generate", preferences);
 
-export const regenerateDay = (preferences, dayNumber, existingItinerary, instruction) =>
+export const askChat = (messages, context) => post("/api/chat", { messages, context });
+
+export const regenerateDay =(preferences, dayNumber, existingItinerary, instruction) =>
   post("/api/itinerary/regenerate-day", {
     preferences,
     day_number: dayNumber,

@@ -75,8 +75,9 @@ Open http://localhost:5173
 | GET | `/health` | Liveness check |
 | POST | `/api/itinerary/generate` | Generate a full itinerary from trip preferences |
 | POST | `/api/itinerary/regenerate-day` | Regenerate one day, avoiding places used on other days |
+| POST | `/api/chat` | Travel assistant chatbot |
 
-Both POST endpoints require `Authorization: Bearer <Supabase access token>`.
+All POST endpoints require `Authorization: Bearer <Supabase access token>`.
 
 ## Deployment
 

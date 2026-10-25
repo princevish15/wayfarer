@@ -5,6 +5,7 @@ import { ArrowRight, MapPin, Mountain, Plane, Search, ShoppingBag, Utensils } fr
 import { DESTINATIONS, useWikiImage } from "../lib/destinations";
 import { EXPERIENCES } from "../lib/experiences";
 import { ExpCard } from "./Experiences";
+import { useSaved } from "../lib/saved";
 import WorldMap from "../components/WorldMap";
 
 const STRIPS = [
@@ -86,6 +87,7 @@ function Section({ region }) {
 
 export default function Explore() {
   const navigate = useNavigate();
+  const saved = useSaved();
   const [q, setQ] = useState("");
   const [region, setRegion] = useState("All");
   const [slide, setSlide] = useState(0);
@@ -196,7 +198,7 @@ export default function Explore() {
           </div>
           <div className="strip-row">
             {EXPERIENCES[s.kind].slice(0, 6).map((e) => (
-              <ExpCard key={e.name} e={e} />
+              <ExpCard key={e.name} e={e} kind={s.kind} saved={saved} />
             ))}
           </div>
         </motion.section>

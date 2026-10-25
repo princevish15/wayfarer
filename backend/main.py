@@ -4,6 +4,7 @@ Endpoints
   GET  /health                          liveness check
   POST /api/itinerary/generate          full multi-day itinerary
   POST /api/itinerary/regenerate-day    regenerate a single day
+  POST /api/chat                        travel assistant chatbot
 
 Auth: the frontend sends the Supabase access token as `Authorization: Bearer <jwt>`.
 The token is verified against Supabase Auth. Trips are saved by the frontend
@@ -270,6 +271,49 @@ async def generate(prefs: TripPreferences, user: dict = Depends(current_user)):
     itinerary = normalise(await call_groq(prompt), prefs)
     await attach_images(prefs.destination, itinerary)
     return itinerary
+
+
+CHAT_PROMPT = (
+    "You are Wayfarer's friendly travel assistant. Give practical, honest advice on where to go, when, "
+    "what to eat, what to do and how much it costs (prices in INR unless asked otherwise). "
+    "Reply in the same language and script as the user: if they write Hinglish (Hindi in English letters), "
+    "reply in Hinglish using English letters only, never Devanagari; use Devanagari only if they do. "
+    "Only mention real, well-known places; never invent names. Start with a clear recommendation. "
+    "Keep answers short: a one-line answer first, "
+    "then at most 5 bullet points starting with '- '. Plain text only, no markdown headings or tables. "
+    "If the question is not about travel, politely steer back to travel."
+)
+
+
+class ChatMessage(BaseModel):
+    role: str = Field(..., pattern="^(user|assistant)$")
+    content: str = Field(..., min_length=1, max_length=1000)
+
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage] = Field(..., min_length=1, max_length=20)
+    context: Optional[str] = Field(None, max_length=4000)
+
+
+@app.post("/api/chat")
+async def chat(req: ChatRequest, user: dict = Depends(current_user)):
+    if not GROQ_API_KEY:
+        raise HTTPException(500, "GROQ_API_KEY is not configured")
+    system = CHAT_PROMPT + (f"\n\nPlaces and experiences listed in the app:\n{req.context}" if req.context else "")
+    payload = {
+        "model": GROQ_MODEL,
+        "temperature": 0.6,
+        "max_tokens": 2000,
+        "messages": [{"role": "system", "content": system}] + [m.model_dump() for m in req.messages],
+    }
+    if "gpt-oss" in GROQ_MODEL:
+        payload["reasoning_effort"] = "low"
+    async with httpx.AsyncClient(timeout=60) as client:
+        r = await client.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {GROQ_API_KEY}"})
+    if r.status_code != 200:
+        raise HTTPException(502, f"AI provider error: {r.text[:200]}")
+    reply = (r.json()["choices"][0]["message"]["content"] or "").strip()
+    return {"reply": reply or "Sorry, I couldn't come up with an answer. Please try asking differently."}
 
 
 @app.post("/api/itinerary/regenerate-day")

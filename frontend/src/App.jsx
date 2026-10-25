@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Compass, LogOut, Luggage, Menu, Mountain, Plus, ShoppingBag, Utensils, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Compass, Heart, KeyRound, LogOut, Luggage, Menu, Mountain, Plus, ShoppingBag, Utensils, X } from "lucide-react";
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { supabase, supabaseConfigured } from "./lib/supabase";
 import Login from "./pages/Login";
@@ -10,6 +10,8 @@ import ResetPassword from "./pages/ResetPassword";
 import NewTrip from "./pages/NewTrip";
 import TripView from "./pages/TripView";
 import SharedTrip from "./pages/SharedTrip";
+import Saved from "./pages/Saved";
+import ChatBot from "./components/ChatBot";
 
 const MENU = [
   { to: "/", icon: Compass, label: "Explore" },
@@ -17,17 +19,34 @@ const MENU = [
   { to: "/shopping", icon: ShoppingBag, label: "Shopping" },
   { to: "/adventures", icon: Mountain, label: "Adventures" },
   { to: "/trips", icon: Luggage, label: "My trips" },
+  { to: "/saved", icon: Heart, label: "Saved" },
 ];
 
 function Shell({ session, children }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
-  useEffect(() => setOpen(false), [pathname]);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+  const savedCount = session.user.user_metadata?.saved?.length ?? 0;
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    setOpen(false);
+    setProfileOpen(false);
+  }, [pathname]);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setProfileOpen(false);
+      }
+    };
+    const onClick = (e) => profileRef.current && !profileRef.current.contains(e.target) && setProfileOpen(false);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onClick);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onClick);
+    };
   }, []);
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -55,12 +74,42 @@ function Shell({ session, children }) {
           <Link to="/new" className="icon-btn icon-btn-primary" aria-label="New trip" title="New trip">
             <Plus size={19} />
           </Link>
-          <span className="avatar" title={email}>
-            {email[0].toUpperCase()}
-          </span>
-          <button className="icon-btn" aria-label="Sign out" title="Sign out" onClick={signOut}>
-            <LogOut size={18} />
-          </button>
+          <div className="profile" ref={profileRef}>
+            <button
+              className="avatar"
+              aria-label="Profile"
+              aria-haspopup="menu"
+              aria-expanded={profileOpen}
+              title={email}
+              onClick={() => setProfileOpen((o) => !o)}
+            >
+              {email[0].toUpperCase()}
+            </button>
+            {profileOpen && (
+              <div className="profile-menu" role="menu">
+                <div className="profile-head">
+                  <span className="avatar">{email[0].toUpperCase()}</span>
+                  <div>
+                    <strong>{email.split("@")[0]}</strong>
+                    <span className="muted small">{email}</span>
+                  </div>
+                </div>
+                <Link to="/trips" role="menuitem">
+                  <Luggage size={17} /> My trips
+                </Link>
+                <Link to="/saved" role="menuitem">
+                  <Heart size={17} /> Saved food & adventures
+                  {savedCount > 0 && <span className="count">{savedCount}</span>}
+                </Link>
+                <Link to="/reset" role="menuitem">
+                  <KeyRound size={17} /> Change password
+                </Link>
+                <button role="menuitem" className="danger" onClick={signOut}>
+                  <LogOut size={17} /> Sign out
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
       </header>
 
@@ -88,6 +137,7 @@ function Shell({ session, children }) {
       </aside>
 
       <main className="container">{children}</main>
+      <ChatBot />
     </div>
   );
 }
@@ -127,6 +177,7 @@ export default function App() {
       <Route path="/food" element={guard(<Experiences kind="food" />)} />
       <Route path="/shopping" element={guard(<Experiences kind="shopping" />)} />
       <Route path="/adventures" element={guard(<Experiences kind="adventure" />)} />
+      <Route path="/saved" element={guard(<Saved />)} />
       <Route path="/trips" element={guard(<Dashboard />)} />
       <Route path="/reset" element={guard(<ResetPassword />)} />
       <Route path="/new" element={guard(<NewTrip />)} />
