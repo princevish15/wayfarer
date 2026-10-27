@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { regenerateDay } from "../lib/api";
 import ActImage from "../components/ActImage";
+import ActDetails from "../components/ActDetails";
 import { useDestImage } from "../lib/destinations";
 import { dayRouteUrl, fmtDate, fmtMoney, fmtRange, placeUrl } from "../lib/format";
 
@@ -212,6 +213,7 @@ export default function TripView() {
                       </>
                     )}
                   </p>
+                  <ActDetails details={a.details} />
                   <div className="act-foot">
                     <label className="cost">
                       {it.currency}

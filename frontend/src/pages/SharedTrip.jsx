@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import ActImage from "../components/ActImage";
+import ActDetails from "../components/ActDetails";
 import { useDestImage } from "../lib/destinations";
 import { dayRouteUrl, fmtDate, fmtMoney, fmtRange, placeUrl } from "../lib/format";
 
@@ -110,6 +111,7 @@ export default function SharedTrip() {
                       )}
                     </p>
                     <p className="muted small">{fmtMoney(a.estimated_cost, it.currency)}</p>
+                    <ActDetails details={a.details} />
                   </div>
                 </div>
               ))}

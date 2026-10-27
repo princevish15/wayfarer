@@ -106,7 +106,14 @@ SCHEMA_HINT = """{
           "location": "string",
           "duration_minutes": number,
           "estimated_cost": number,
-          "image_query": "short search phrase for a photo"
+          "image_query": "short search phrase for a photo",
+          "details": {
+            "about": "string (2-3 sentences: what it is, why visit)",
+            "highlights": ["string (2-4 things to see/do/order here)"],
+            "tips": ["string (1-3 practical tips: tickets, crowds, dress code)"],
+            "best_time": "string (best time to go / opening hours)",
+            "how_to_reach": "string (short, from the previous stop)"
+          }
         }
       ]
     }

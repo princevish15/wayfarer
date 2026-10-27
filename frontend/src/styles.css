@@ -278,3 +278,11 @@ button.avatar:hover, button.avatar[aria-expanded="true"] { box-shadow: 0 0 0 3px
   .chat-fab { right: 16px; bottom: 16px; }
   .profile-menu { right: -8px; }
 }
+
+.act-details { margin-top: 8px; }
+.act-details .flip { transform: rotate(180deg); }
+.details-body { margin-top: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(99,102,241,.08); font-size: .92rem; }
+.details-body h4 { margin: 8px 0 2px; font-size: .85rem; }
+.details-body ul { margin: 0; padding-left: 18px; }
+.details-body p { margin: 6px 0; }
+@media print { .act-details button { display: none !important; } }
