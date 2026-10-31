@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Copy, MapPin, Printer, RefreshCw, Share2, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, Copy, MapPin, Pencil, Plus, Printer, RefreshCw, Share2, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { regenerateDay } from "../lib/api";
@@ -75,6 +75,34 @@ export default function TripView() {
     });
   };
 
+  const [editing, setEditing] = useState(null); // { day, idx, draft }
+
+  const saveActivity = () => {
+    const { day: dayNo, idx, draft } = editing;
+    const it = trip.itinerary;
+    const act = { ...draft, estimated_cost: Number(draft.estimated_cost) || 0, duration_minutes: Number(draft.duration_minutes) || undefined };
+    update({
+      ...it,
+      days: it.days.map((d) =>
+        d.day === dayNo ? { ...d, activities: d.activities.map((a, i) => (i === idx ? act : a)) } : d
+      ),
+    });
+    setEditing(null);
+  };
+
+  const addActivity = (dayNo) => {
+    const it = trip.itinerary;
+    const blank = { time: "12:00", title: "New activity", type: "attraction", description: "", location: "", estimated_cost: 0 };
+    const idx = it.days.find((d) => d.day === dayNo).activities.length;
+    update({ ...it, days: it.days.map((d) => (d.day === dayNo ? { ...d, activities: [...d.activities, blank] } : d)) });
+    setEditing({ day: dayNo, idx, draft: blank });
+  };
+
+  const renameTrip = () => {
+    const title = prompt("Trip title", trip.itinerary.title);
+    if (title && title.trim()) update({ ...trip.itinerary, title: title.trim() });
+  };
+
   const editCost = (dayNo, idx, value) => {
     const it = trip.itinerary;
     update({
@@ -146,7 +174,12 @@ export default function TripView() {
         <Link to="/trips" className="back">
           <ArrowLeft size={14} /> My trips
         </Link>
-        <h1>{it.title}</h1>
+        <h1>
+          {it.title}{" "}
+          <button className="btn btn-ghost btn-sm" onClick={renameTrip} title="Rename trip">
+            <Pencil size={14} />
+          </button>
+        </h1>
         <p>
           {trip.destination} · {fmtRange(trip.start_date, trip.end_date)} · {trip.preferences.travelers} traveler
           {trip.preferences.travelers > 1 ? "s" : ""}
@@ -192,6 +225,36 @@ export default function TripView() {
                 transition={{ duration: 0.35, delay: i * 0.06 }}
               >
                 <ActImage a={a} />
+                {editing?.day === day.day && editing.idx === i ? (
+                <div className="act-body act-edit">
+                  {[["time", "Time"], ["title", "Title"], ["location", "Location"], ["estimated_cost", "Cost"], ["duration_minutes", "Duration (min)"]].map(([k, l]) => (
+                    <label key={k}>
+                      {l}
+                      <input
+                        type={k === "estimated_cost" || k === "duration_minutes" ? "number" : "text"}
+                        value={editing.draft[k] ?? ""}
+                        onChange={(e) => setEditing((x) => ({ ...x, draft: { ...x.draft, [k]: e.target.value } }))}
+                      />
+                    </label>
+                  ))}
+                  <label>
+                    Type
+                    <select value={editing.draft.type} onChange={(e) => setEditing((x) => ({ ...x, draft: { ...x.draft, type: e.target.value } }))}>
+                      {Object.entries(TYPE_LABEL).map(([v, l]) => (
+                        <option key={v} value={v}>{l}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Description
+                    <textarea rows={3} value={editing.draft.description ?? ""} onChange={(e) => setEditing((x) => ({ ...x, draft: { ...x.draft, description: e.target.value } }))} />
+                  </label>
+                  <div className="act-foot">
+                    <button className="btn btn-primary btn-sm" onClick={saveActivity}>Save</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEditing(null)}>Cancel</button>
+                  </div>
+                </div>
+                ) : (
                 <div className="act-body">
                   <div className="act-top">
                     <span className="time">
@@ -224,13 +287,22 @@ export default function TripView() {
                         onBlur={(e) => Number(e.target.value) !== a.estimated_cost && editCost(day.day, i, e.target.value)}
                       />
                     </label>
-                    <button className="btn btn-ghost btn-sm" onClick={() => removeActivity(day.day, i)}>
-                      <Trash2 size={14} /> Remove
-                    </button>
+                    <span>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setEditing({ day: day.day, idx: i, draft: { ...a } })}>
+                        <Pencil size={14} /> Edit
+                      </button>{" "}
+                      <button className="btn btn-ghost btn-sm" onClick={() => removeActivity(day.day, i)}>
+                        <Trash2 size={14} /> Remove
+                      </button>
+                    </span>
                   </div>
                 </div>
+                )}
               </motion.div>
             ))}
+            <button className="btn btn-ghost btn-sm" onClick={() => addActivity(day.day)}>
+              <Plus size={14} /> Add activity
+            </button>
             {day.activities.length === 0 && <p className="muted">No activities left. Try regenerating this day.</p>}
           </div>
 
