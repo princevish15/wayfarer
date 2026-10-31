@@ -11,9 +11,9 @@ const LOADING_TIPS = [
   "Lining up stays and transport...",
   "Adding map links for every stop...",
 ];
-const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "SGD", "JPY"];
+export const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "SGD", "JPY"];
 
-const INTERESTS = [
+export const INTERESTS = [
   "Food",
   "Sightseeing",
   "Culture & history",

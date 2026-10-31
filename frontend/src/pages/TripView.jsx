@@ -3,8 +3,9 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Clock, Copy, MapPin, Pencil, Plus, Printer, RefreshCw, Share2, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { regenerateDay } from "../lib/api";
+import { generateItinerary, regenerateDay } from "../lib/api";
 import ActImage from "../components/ActImage";
+import TripSettings from "../components/TripSettings";
 import ActDetails from "../components/ActDetails";
 import { useDestImage } from "../lib/destinations";
 import { dayRouteUrl, fmtDate, fmtMoney, fmtRange, placeUrl } from "../lib/format";
@@ -96,6 +97,27 @@ export default function TripView() {
     const idx = it.days.find((d) => d.day === dayNo).activities.length;
     update({ ...it, days: it.days.map((d) => (d.day === dayNo ? { ...d, activities: [...d.activities, blank] } : d)) });
     setEditing({ day: dayNo, idx, draft: blank });
+  };
+
+  const [rebuilding, setRebuilding] = useState(false);
+  const saveSettings = async (prefs, regen) => {
+    setError("");
+    setRebuilding(true);
+    try {
+      const meta = { destination: prefs.destination, start_date: prefs.start_date, end_date: prefs.end_date, budget: prefs.budget, currency: prefs.currency, preferences: prefs };
+      let patch = meta;
+      if (regen) {
+        const itinerary = await generateItinerary(prefs);
+        patch = { ...meta, itinerary, title: itinerary.title, cover_image: itinerary.cover_image || null };
+      }
+      const { error: e } = await supabase.from("trips").update(patch).eq("id", id);
+      if (e) throw new Error(e.message);
+      setTrip((t) => ({ ...t, ...patch }));
+      setActiveDay(1);
+    } catch (e) {
+      setError(e.message);
+    }
+    setRebuilding(false);
   };
 
   const renameTrip = () => {
@@ -321,6 +343,8 @@ export default function TripView() {
         </section>
 
         <aside>
+          <TripSettings key={trip.updated_at || "s"} trip={trip} busy={rebuilding} onSave={saveSettings} />
+          {rebuilding && <p className="muted small">Updating your trip... (10-20s)</p>}
           <div className="card side">
             <h3>Budget</h3>
             <div className="bar">
