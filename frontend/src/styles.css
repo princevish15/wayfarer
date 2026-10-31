@@ -286,3 +286,5 @@ button.avatar:hover, button.avatar[aria-expanded="true"] { box-shadow: 0 0 0 3px
 .details-body ul { margin: 0; padding-left: 18px; }
 .details-body p { margin: 6px 0; }
 @media print { .act-details button { display: none !important; } }
+.check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.check input { width: auto; }

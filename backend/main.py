@@ -57,6 +57,8 @@ class TripPreferences(BaseModel):
     pace: str = "balanced"  # relaxed | balanced | packed
     stay_type: str = "mid-range"  # budget | mid-range | premium
     notes: Optional[str] = Field(None, max_length=500)
+    origin: Optional[str] = Field(None, max_length=120)  # starting city; None = no journey section
+    travel_mode: str = "any"  # any | flight | train | bus | car
 
 
 class RegenerateDayRequest(BaseModel):
@@ -126,6 +128,19 @@ def num_days(p: TripPreferences) -> int:
     return (p.end_date - p.start_date).days + 1
 
 
+def journey_block(p: TripPreferences) -> str:
+    if not p.origin:
+        return ""
+    mode = "the best option (flight, train or bus)" if p.travel_mode == "any" else p.travel_mode
+    return (
+        f"\nJourney: the traveller starts from {p.origin}. Add a transport activity on the first day "
+        f"({p.origin} -> {p.destination}) and a return one on the last day ({p.destination} -> {p.origin}) "
+        f"by {mode}. Title it like 'Train: {p.origin} -> {p.destination}', put the route in location, "
+        f"include realistic duration and cost per all travelers, and mention station/airport/bus stand "
+        f"names in details. Do not assume a flight unless travel mode is flight or it is clearly the best option."
+    )
+
+
 def prefs_block(p: TripPreferences) -> str:
     return (
         f"Destination: {p.destination}\n"
@@ -136,6 +151,7 @@ def prefs_block(p: TripPreferences) -> str:
         f"Pace: {p.pace}\n"
         f"Accommodation: {p.stay_type}\n"
         f"Extra notes: {p.notes or 'none'}"
+        + journey_block(p)
     )
 
 

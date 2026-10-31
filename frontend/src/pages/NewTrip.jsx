@@ -49,7 +49,10 @@ export default function NewTrip() {
     pace: "balanced",
     stay_type: "mid-range",
     notes: "",
+    origin: "",
+    travel_mode: "any",
   });
+  const [journey, setJourney] = useState(false);
   const [busy, setBusy] = useState(false);
   const loadPhoto = useDestImage(busy ? f.destination : "", 1280);
   const [tip, setTip] = useState(0);
@@ -70,7 +73,7 @@ export default function NewTrip() {
     if (f.end_date < f.start_date) return setError("End date must be on or after the start date.");
     setBusy(true);
     try {
-      const prefs = { ...f, budget: Number(f.budget), travelers: Number(f.travelers), notes: f.notes || null };
+      const prefs = { ...f, budget: Number(f.budget), travelers: Number(f.travelers), notes: f.notes || null, origin: journey && f.origin.trim() ? f.origin.trim() : null };
       const itinerary = await generateItinerary(prefs);
       const { data: u } = await supabase.auth.getUser();
       const { data, error: dbErr } = await supabase
@@ -216,6 +219,31 @@ export default function NewTrip() {
             <option value="premium">Premium</option>
           </select>
         </label>
+      </div>
+
+      <div className="field">
+        <label className="check">
+          <input type="checkbox" checked={journey} onChange={(e) => setJourney(e.target.checked)} /> Add my journey to the
+          destination (optional)
+        </label>
+        {journey && (
+          <div className="row">
+            <label className="grow">
+              Travelling from
+              <input placeholder="e.g. Delhi, India" value={f.origin} onChange={(e) => set("origin", e.target.value)} />
+            </label>
+            <label className="grow">
+              Travel by
+              <select value={f.travel_mode} onChange={(e) => set("travel_mode", e.target.value)}>
+                <option value="any">Any (best option)</option>
+                <option value="flight">Flight</option>
+                <option value="train">Train</option>
+                <option value="bus">Bus</option>
+                <option value="car">Own car / cab</option>
+              </select>
+            </label>
+          </div>
+        )}
       </div>
 
       <label>
